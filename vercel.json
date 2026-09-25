@@ -2,17 +2,18 @@
   "buildCommand": "npm run build:vercel",
   "outputDirectory": "dist",
   "framework": null,
-  "rewrites": [
-    { "source": "/app", "destination": "/app/index.html" },
-    { "source": "/app/(.*)", "destination": "/app/index.html" }
-  ],
-  "headers": [
+  "routes": [
     {
-      "source": "/currency-quick.zip",
-      "headers": [
-        { "key": "Content-Type", "value": "application/zip" },
-        { "key": "Content-Disposition", "value": "attachment; filename=\"currency-quick.zip\"" }
-      ]
-    }
+      "src": "/currency-quick.zip",
+      "dest": "/currency-quick.zip",
+      "headers": {
+        "Content-Type": "application/zip",
+        "Content-Disposition": "attachment; filename=\"currency-quick.zip\""
+      }
+    },
+    { "src": "/app", "dest": "/app/index.html" },
+    { "src": "/app/(.*)", "dest": "/app/index.html" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
