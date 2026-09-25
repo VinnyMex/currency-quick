@@ -121,6 +121,12 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:32px
 .download-btn{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,#10B981,#059669);color:#fff;text-decoration:none;border-radius:10px;padding:14px 32px;font-weight:700;font-size:1rem;box-shadow:0 4px 16px rgba(16,185,129,.35);transition:all .2s;margin-bottom:24px}
 .download-btn:hover{opacity:.88;transform:translateY(-2px)}
 .download-btn svg{width:20px;height:20px;fill:currentColor;flex-shrink:0}
+
+.btn-download{background:linear-gradient(135deg,#10B981,#059669);color:#fff;box-shadow:0 4px 16px rgba(16,185,129,.35)}
+.btn-download:hover{background:linear-gradient(135deg,#059669,#047857);transform:translateY(-1px);box-shadow:0 6px 20px rgba(16,185,129,.45)}
+.btn-chrome{background:transparent;color:var(--muted);border:1.5px solid var(--border);font-size:.82rem;padding:8px 16px}
+.btn-chrome:hover{border-color:var(--muted);color:var(--text);transform:none;box-shadow:none}
+.nav-btns{display:flex;gap:8px;align-items:center}
 </style>
 </head>
 <body>
@@ -137,7 +143,10 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:32px
       <li><a href="#install">Instalar</a></li>
       <li><a href="#donate">Apoiar</a></li>
     </ul>
-    <a class="btn btn-primary" href="https://chrome.google.com/webstore" target="_blank" rel="noopener">+ Adicionar ao Chrome</a>
+    <div class="nav-btns">
+    <a class="btn btn-download" href="/currency-quick.zip" download>&#8659; Baixar .zip</a>
+    <a class="btn btn-chrome" href="https://chrome.google.com/webstore" target="_blank" rel="noopener">Chrome Store</a>
+  </div>
   </div>
 </nav>
 
@@ -148,9 +157,10 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:32px
   <h1>Converta moedas em segundos no Chrome</h1>
   <p>Cotações em tempo real, 16 moedas, histórico de conversões e modo escuro. Tudo num clique &mdash; sem abrir nenhum site.</p>
   <div class="hero-btns">
-    <a class="btn btn-primary" href="https://chrome.google.com/webstore" target="_blank" rel="noopener">+ Adicionar ao Chrome &mdash; &Eacute; gr&aacute;tis</a>
-    <a class="btn btn-outline" href="#features">Ver recursos</a>
+    <a class="btn btn-download" style="font-size:1.05rem;padding:14px 32px" href="/currency-quick.zip" download>&#8659; Baixar Currency Quick &mdash; Gr&aacute;tis</a>
+    <a class="btn btn-outline" href="https://chrome.google.com/webstore" target="_blank" rel="noopener" style="font-size:.85rem;padding:10px 18px;opacity:.7">Chrome Web Store (em breve)</a>
   </div>
+  <p style="color:var(--muted);font-size:.78rem;margin-top:-20px">~350 KB &bull; Instala&ccedil;&atilde;o manual em 2 min &bull; <a href="#install" style="color:var(--accent2);text-decoration:none">ver instru&ccedil;&otilde;es</a></p>
 </section>
 
 <!-- MOCKUP -->
@@ -247,12 +257,12 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:32px
     <p class="section-sub">Escolha a forma mais f&aacute;cil para voc&ecirc;. Pronto em menos de 2 minutos.</p>
 
     <div class="install-tabs">
-      <button class="install-tab active" onclick="switchTab('store')">&#127381; Chrome Web Store</button>
-      <button class="install-tab" onclick="switchTab('manual')">&#128190; Instala&ccedil;&atilde;o Manual</button>
+      <button class="install-tab" onclick="switchTab('store')">&#127381; Chrome Web Store (em breve)</button>
+      <button class="install-tab active" onclick="switchTab('manual')">&#128190; Instala&ccedil;&atilde;o Manual</button>
     </div>
 
     <!-- Painel: Chrome Web Store -->
-    <div class="install-panel active" id="tab-store">
+    <div class="install-panel" id="tab-store">
       <div class="steps">
         <div class="step"><div class="step-num">1</div>
           <h3>Abra a Chrome Web Store</h3>
@@ -272,12 +282,13 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:32px
         </div>
       </div>
       <div style="text-align:center;margin-top:40px">
-        <a class="btn btn-primary" style="font-size:1rem;padding:14px 32px" href="https://chrome.google.com/webstore" target="_blank" rel="noopener">&#127381; Adicionar ao Chrome &mdash; Gr&aacute;tis</a>
+        <a class="btn btn-primary" style="font-size:1rem;padding:14px 32px;opacity:.6;cursor:not-allowed" href="#" onclick="return false">&#127381; Chrome Web Store &mdash; Em breve</a>
+      <p style="color:var(--muted);font-size:.8rem;margin-top:12px">Ainda n&atilde;o dispon&iacute;vel. Use a instala&ccedil;&atilde;o manual por enquanto.</p>
       </div>
     </div>
 
     <!-- Painel: Instalacao Manual -->
-    <div class="install-panel" id="tab-manual">
+    <div class="install-panel active" id="tab-manual">
       <div class="manual-note">
         <strong>&#9888;&#65039; Instala&ccedil;&atilde;o manual (modo desenvolvedor)</strong><br>
         Este m&eacute;todo funciona enquanto a extens&atilde;o ainda n&atilde;o est&aacute; na Chrome Web Store.
