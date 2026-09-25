@@ -1,0 +1,29 @@
+node_modules/
+dist/
+dist-extension/
+.env
+.env.local
+.env.production
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+.vite/
+coverage/
+
+# Chave privada e binário assinado da extensão Chrome — NUNCA publicar
+*.pem
+*.crx
+*.key
+
+# Arquivos gerados/temporários
+lp-assets.json
+pix-qr.txt
+qr-*.txt
+
+# ZIPs gerados — excluir da raiz, mas manter o de public/ para download no site
+currency-quick-store.zip
+currency-quick.zip
+dist-extension.zip
+# Exceção: ZIP da extensão em public/ precisa ir pro repositório (build do Vercel)
+!public/currency-quick.zip

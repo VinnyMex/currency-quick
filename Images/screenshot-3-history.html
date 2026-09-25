@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1280px;height:800px;overflow:hidden;background:#e2e8f0;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;position:relative}
+.chrome-bar{width:100%;height:56px;background:#dee1e6;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid #c5c8cd}
+.chrome-dots{display:flex;gap:6px}
+.dot{width:12px;height:12px;border-radius:50%}
+.d1{background:#ff5f57}.d2{background:#febc2e}.d3{background:#28c840}
+.chrome-addr{flex:1;max-width:600px;margin:0 auto;background:#fff;border-radius:20px;height:32px;display:flex;align-items:center;padding:0 16px;gap:8px;border:1px solid #dadce0}
+.chrome-addr .url{color:#202124;font-size:13px}
+.ext-icons{display:flex;gap:8px;align-items:center}
+.ext-icon{width:28px;height:28px;border-radius:6px;background:#e8eaed;display:flex;align-items:center;justify-content:center;font-size:15px}
+.ext-active{background:#1a73e8}
+/* Página */
+.page{width:100%;height:744px;background:#F1F5F9;display:flex;align-items:flex-start;justify-content:center;padding-top:24px}
+/* Popup tema claro */
+.popup{width:320px;background:#fff;border:1px solid #CBD5E1;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.15);overflow:hidden}
+.pw-header{background:#fff;padding:12px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #e2e8f0}
+.pw-logo{font-size:18px;color:#2563EB}
+.pw-title{color:#0F172A;font-size:14px;font-weight:700;flex:1}
+.pw-theme{background:#E2E8F0;border:1px solid #CBD5E1;border-radius:6px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:13px}
+.pw-body{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.pw-input{background:#E2E8F0;border:1.5px solid #2563EB;border-radius:8px;padding:10px 14px;font-size:22px;font-weight:700;color:#0F172A;text-align:right}
+.pw-labels{display:grid;grid-template-columns:1fr 36px 1fr;gap:6px;font-size:10px;color:#94A3B8;text-transform:uppercase;letter-spacing:.05em}
+.pw-labels span:last-child{text-align:right}
+.pw-row{display:grid;grid-template-columns:1fr 36px 1fr;gap:6px;align-items:center}
+.pw-sel{background:#E2E8F0;border:1.5px solid #CBD5E1;border-radius:8px;padding:8px 10px;font-size:11px;font-weight:600;color:#0F172A;text-align:center}
+.pw-inv{background:#E2E8F0;border:1.5px solid #CBD5E1;border-radius:8px;height:36px;display:flex;align-items:center;justify-content:center;color:#2563EB;font-size:16px}
+.pw-btn{background:#2563EB;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:700;padding:11px;text-align:center}
+.pw-result{background:#EFF6FF;border:1.5px solid #2563EB;border-radius:8px;padding:12px;text-align:center}
+.pw-rval{font-size:26px;font-weight:800;color:#1D4ED8}
+.pw-rrate{font-size:11px;color:#475569;margin-top:4px}
+/* Histórico */
+.hist-header{display:flex;align-items:center;justify-content:space-between;padding:0 14px;margin-bottom:6px}
+.hist-title{font-size:10px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.06em}
+.hist-clear{font-size:10px;color:#94A3B8;background:none;border:none;cursor:pointer}
+.hist-item{margin:0 14px 6px;background:#F1F5F9;border:1px solid #CBD5E1;border-radius:8px;padding:8px 10px;display:grid;grid-template-columns:1fr auto;gap:6px}
+.hi-pair{font-size:12px;font-weight:700;color:#0F172A}
+.hi-time{font-size:10px;color:#94A3B8}
+.hi-val{font-size:12px;font-weight:700;color:#0F172A;text-align:right}
+.hi-from{font-size:11px;color:#64748B;text-align:right}
+.hi-btns{display:flex;gap:4px;margin-top:4px;justify-content:flex-end}
+.hi-reconvert{background:#EFF6FF;border:1px solid #2563EB;border-radius:5px;color:#2563EB;font-size:10px;padding:2px 8px}
+.hi-del{background:none;border:1px solid transparent;border-radius:5px;color:#94A3B8;font-size:12px;width:20px;height:20px;display:flex;align-items:center;justify-content:center}
+.divider{height:1px;background:#e2e8f0;margin:6px 14px}
+.pw-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid #e2e8f0}
+.pw-options{color:#94A3B8;font-size:11px;background:none;border:none}
+.pw-donate{background:linear-gradient(135deg,#F59E0B,#F97316);border:none;border-radius:6px;color:#fff;font-size:10px;font-weight:700;padding:5px 10px}
+</style>
+</head>
+<body>
+<div class="chrome-bar">
+  <div class="chrome-dots"><div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div></div>
+  <div class="chrome-addr">
+    <span>🔒</span>
+    <span class="url">wise.com/br/currency-converter</span>
+  </div>
+  <div class="ext-icons">
+    <div class="ext-icon">⬛</div>
+    <div class="ext-icon ext-active"><img src="data:image/png;base64,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" width="18" height="18"/></div>
+    <div class="ext-icon">⋮</div>
+  </div>
+</div>
+<div class="page">
+  <div class="popup">
+    <div class="pw-header">
+      <span class="pw-logo">⇄</span>
+      <span class="pw-title">Currency Quick</span>
+      <div class="pw-theme">☀️</div>
+    </div>
+    <div class="pw-body">
+      <div class="pw-input">500,00</div>
+      <div class="pw-labels"><span>De</span><span></span><span>Para</span></div>
+      <div class="pw-row">
+        <div class="pw-sel">EUR 🇪🇺</div>
+        <div class="pw-inv">⇄</div>
+        <div class="pw-sel">BRL 🇧🇷</div>
+      </div>
+      <div class="pw-btn">Converter</div>
+      <div class="pw-result">
+        <div class="pw-rval">R$ 3.241,50</div>
+        <div class="pw-rrate">1 EUR = R$ 6,483 · atualizado às 09:15</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="hist-header">
+      <span class="hist-title">Histórico</span>
+      <button class="hist-clear">Limpar tudo</button>
+    </div>
+    <div class="hist-item">
+      <div><div class="hi-pair">EUR → BRL</div><div class="hi-time">hoje, 09:15</div></div>
+      <div><div class="hi-val">R$ 3.241,50</div><div class="hi-from">€ 500,00</div><div class="hi-btns"><button class="hi-reconvert">↻ Atual</button><button class="hi-del">✕</button></div></div>
+    </div>
+    <div class="hist-item">
+      <div><div class="hi-pair">USD → BRL</div><div class="hi-time">ontem, 14:32</div></div>
+      <div><div class="hi-val">R$ 5.847,20</div><div class="hi-from">$1,000.00</div><div class="hi-btns"><button class="hi-reconvert">↻ Atual</button><button class="hi-del">✕</button></div></div>
+    </div>
+    <div class="hist-item">
+      <div><div class="hi-pair">BRL → USD</div><div class="hi-time">ontem, 11:08</div></div>
+      <div><div class="hi-val">$170.97</div><div class="hi-from">R$ 1.000,00</div><div class="hi-btns"><button class="hi-reconvert">↻ Atual</button><button class="hi-del">✕</button></div></div>
+    </div>
+    <div class="pw-footer">
+      <button class="pw-options">⚙ Configurações</button>
+      <button class="pw-donate">☕ Apoiar vWeb</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

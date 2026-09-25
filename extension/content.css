@@ -1,0 +1,164 @@
+/* Currency Quick — Widget de conversão */
+
+#cq-widget {
+  position: fixed;
+  z-index: 2147483647;
+  background: #0F172A;
+  color: #F1F5F9;
+  border: 1.5px solid #3B82F6;
+  border-radius: 14px;
+  padding: 14px 16px;
+  min-width: 230px;
+  max-width: 300px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(59, 130, 246, 0.15);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  animation: cq-slide-in 0.15s ease;
+}
+
+@keyframes cq-slide-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+/* ── Header ── */
+#cq-widget .cq-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+#cq-widget .cq-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #93C5FD;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+#cq-widget .cq-close {
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: #64748B;
+  cursor: pointer;
+  font-size: 12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s;
+}
+#cq-widget .cq-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #EF4444;
+}
+
+/* ── Valor original ── */
+#cq-widget .cq-original {
+  font-size: 18px;
+  font-weight: 700;
+  color: #F1F5F9;
+  margin-bottom: 10px;
+  letter-spacing: -0.02em;
+}
+
+#cq-widget .cq-ambig {
+  font-size: 10px;
+  font-weight: 400;
+  color: #F59E0B;
+  vertical-align: middle;
+}
+
+/* ── Separador ── */
+#cq-widget .cq-sep {
+  height: 1px;
+  background: #1E293B;
+  margin-bottom: 8px;
+}
+
+/* ── Linhas de cotação ── */
+#cq-widget .cq-rates {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+#cq-widget .cq-rate-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #1E293B;
+  transition: background 0.12s;
+}
+#cq-widget .cq-rate-item:hover {
+  background: #263347;
+}
+#cq-widget .cq-rate-item.cq-rate-source {
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+#cq-widget .cq-rate-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  min-width: 36px;
+}
+#cq-widget .cq-rate-item.cq-rate-source .cq-rate-label {
+  color: #93C5FD;
+}
+
+#cq-widget .cq-rate-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #F1F5F9;
+}
+#cq-widget .cq-rate-item.cq-rate-source .cq-rate-value {
+  color: #93C5FD;
+}
+
+/* ── Footer ── */
+#cq-widget .cq-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid #1E293B;
+}
+
+#cq-widget .cq-status-text {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+
+#cq-widget .cq-copy-btn {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93C5FD;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 6px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+#cq-widget .cq-copy-btn:hover {
+  background: #3B82F6;
+  color: white;
+  border-color: #3B82F6;
+}

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="13" fill="#2563EB"/>
+  <text x="50%" y="45%" font-family="system-ui,sans-serif" font-size="22px" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">&#x21C4;</text>
+  <text x="50%" y="76%" font-family="system-ui,sans-serif" font-size="12px" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">CQ</text>
+</svg>

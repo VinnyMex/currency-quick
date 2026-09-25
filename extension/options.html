@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Currency Quick — Configurações</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <div class="options-container">
+    <header class="header">
+      <span class="logo">⇄</span>
+      <div>
+        <h1>Currency Quick</h1>
+        <p class="subtitle">Configurações da extensão</p>
+      </div>
+    </header>
+
+    <form id="options-form">
+
+      <!-- Moedas padrão -->
+      <section class="section">
+        <h2>Moedas Padrão</h2>
+        <div class="field-row">
+          <div class="field">
+            <label for="default-from">De (origem)</label>
+            <select id="default-from"></select>
+          </div>
+          <div class="field">
+            <label for="default-to">Para (destino)</label>
+            <select id="default-to"></select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Provedor de cotação -->
+      <section class="section">
+        <h2>Provedor de Cotação</h2>
+        <div class="field">
+          <label for="provider">Provedor</label>
+          <select id="provider">
+            <option value="demo">Demo — Frankfurter (gratuito, sem chave)</option>
+            <option value="real">Real — API personalizada (requer chave)</option>
+          </select>
+          <p class="hint">O provedor Demo usa a API gratuita Frankfurter (não suporta BRL diretamente; usa conversão intermediária via EUR).</p>
+        </div>
+
+        <div id="real-fields" class="real-fields hidden">
+          <div class="field">
+            <label for="api-url">URL da API</label>
+            <input type="url" id="api-url" placeholder="https://api.exemplo.com/latest" />
+            <p class="hint">Ex: https://openexchangerates.org/api/latest.json</p>
+          </div>
+          <div class="field">
+            <label for="api-key">Chave da API</label>
+            <input type="password" id="api-key" placeholder="Sua chave de API" autocomplete="off" />
+            <p id="api-key-hint" class="hint"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Widget no conteúdo -->
+      <section class="section">
+        <h2>Widget de Seleção</h2>
+        <div class="field checkbox-field">
+          <label class="checkbox-label">
+            <input type="checkbox" id="widget-enabled" checked />
+            <span>Ativar widget ao selecionar valores monetários nas páginas</span>
+          </label>
+        </div>
+        <div class="field">
+          <label for="widget-delay">Delay do widget (ms)</label>
+          <input type="number" id="widget-delay" min="100" max="2000" step="100" value="350" />
+          <p class="hint">Tempo em ms após a seleção para exibir o widget (padrão: 350).</p>
+        </div>
+      </section>
+
+      <!-- Cache -->
+      <section class="section">
+        <h2>Cache de Cotações</h2>
+        <div class="field">
+          <label for="cache-ttl">TTL do cache (minutos)</label>
+          <input type="number" id="cache-ttl" min="1" max="60" step="1" value="5" />
+          <p class="hint">Por quanto tempo a cotação é mantida em cache (padrão: 5 min).</p>
+        </div>
+        <button type="button" id="clear-cache-btn" class="btn-secondary">Limpar Cache Agora</button>
+      </section>
+
+      <!-- Ações -->
+      <div class="actions">
+        <button type="submit" id="save-btn" class="btn-primary">Salvar Configurações</button>
+        <button type="button" id="reset-btn" class="btn-ghost">Restaurar Padrões</button>
+      </div>
+    </form>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <footer class="footer">
+      <span>Currency Quick v1.0.0</span>
+      <span>Cotações fornecidas por <a href="https://www.frankfurter.app" target="_blank" rel="noopener">Frankfurter</a> (demo)</span>
+    </footer>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

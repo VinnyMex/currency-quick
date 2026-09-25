@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Currency Quick</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="popup-container">
+
+    <!-- Header -->
+    <div class="header">
+      <span class="logo">⇄</span>
+      <h1>Currency Quick</h1>
+      <button id="theme-btn" class="theme-btn" title="Alternar tema claro/escuro">🌙</button>
+    </div>
+
+    <!-- Valor -->
+    <div class="form-group">
+      <input type="number" id="amount" placeholder="0.00" min="0" step="any" autocomplete="off" />
+    </div>
+
+    <!-- Labels -->
+    <div class="currency-labels">
+      <span class="currency-label">De</span>
+      <span></span>
+      <span class="currency-label right">Para</span>
+    </div>
+
+    <!-- Seletores de moeda -->
+    <div class="currency-row">
+      <div class="select-wrap">
+        <select id="from-currency"></select>
+      </div>
+      <button id="invert-btn" title="Inverter moedas">⇄</button>
+      <div class="select-wrap">
+        <select id="to-currency"></select>
+      </div>
+    </div>
+
+    <!-- Botão converter -->
+    <button id="convert-btn">Converter</button>
+
+    <!-- Resultado -->
+    <div id="result-container" class="result-container hidden">
+      <div id="result" class="result"></div>
+      <div id="rate-info" class="rate-info"></div>
+      <div class="result-actions">
+        <button id="copy-btn" class="action-btn">Copiar</button>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div id="status-bar" class="status-bar">
+      <span id="status-dot" class="dot dot-idle">●</span>
+      <span id="status-text">Carregando cotação...</span>
+      <button id="refresh-btn" title="Atualizar cotação">↻</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Atalhos: preenchidos dinamicamente -->
+    <div id="shortcuts" class="shortcuts"></div>
+
+    <div class="divider"></div>
+
+    <!-- Histórico -->
+    <div class="hist-header">
+      <span class="hist-title">Histórico</span>
+      <button id="clear-all-btn" class="clear-all-btn" title="Limpar todo o histórico">Limpar tudo</button>
+    </div>
+    <ul id="history-list" class="history-list"></ul>
+
+    <!-- Rodapé: Configurações + Doação -->
+    <div class="footer-bar">
+      <button id="options-link" class="options-link">⚙ Configurações</button>
+      <button id="donate-btn" class="donate-btn" title="Copiar chave Pix e apoiar o criador">
+        ☕ Apoiar vWeb
+      </button>
+    </div>
+
+    <!-- Toast Pix (oculto por padrão) -->
+    <div id="pix-toast" class="pix-toast hidden">
+      <span class="pix-toast-icon">✓</span>
+      <span class="pix-toast-text">Chave Pix copiada! Obrigado, vWeb Marketing 💙</span>
+    </div>
+
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

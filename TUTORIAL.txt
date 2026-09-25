@@ -1,0 +1,198 @@
+==============================================================
+  CURRENCY QUICK — TUTORIAL DE USO
+==============================================================
+
+--------------------------------------------------------------
+COMO ATUALIZAR A EXTENSAO SEM REINSTALAR
+--------------------------------------------------------------
+
+Depois de editar qualquer arquivo em dist-extension/ voce NAO
+precisa remover e reinstalar a extensao. Faca apenas:
+
+  1. Abra o Chrome e va em:  chrome://extensions
+  2. Encontre o cartao "Currency Quick"
+  3. Clique no icone de RECARREGAR (seta circular ↻) que aparece
+     no canto inferior esquerdo do cartao da extensao.
+  4. Pronto! A extensao relê todos os arquivos do disco.
+
+ATENCAO — service worker (background.js):
+  Apos recarregar, se o popup nao atualizar imediatamente:
+  - Feche e reabra o popup clicando no icone da extensao.
+  - Ou clique em "Visualizacoes: service worker" no cartao da
+    extensao para forcar o reload do service worker.
+
+DICA: Mantenha a aba chrome://extensions aberta ao lado enquanto
+desenvolve — um clique e a extensao ja esta atualizada.
+
+--------------------------------------------------------------
+
+--------------------------------------------------------------
+1. INSTALANDO AS DEPENDENCIAS
+--------------------------------------------------------------
+
+Abra o terminal (PowerShell ou cmd) na pasta do projeto e execute:
+
+    npm run setup
+
+Esse comando faz duas coisas automaticamente:
+  - Instala todas as dependencias (npm install)
+  - Gera os icones PNG para a extensao e para a PWA
+
+Se preferir fazer manualmente:
+    npm install
+    npm run icons
+
+
+--------------------------------------------------------------
+2. RODANDO O PWA (MODO DESENVOLVIMENTO)
+--------------------------------------------------------------
+
+    npm run dev
+
+Acesse no navegador: http://localhost:5173
+
+O servidor recarrega automaticamente ao salvar arquivos.
+A PWA funciona com o Service Worker em modo de preview.
+Para testar o Service Worker completo, use:
+
+    npm run build
+    npm run preview
+
+
+--------------------------------------------------------------
+3. GERANDO A EXTENSAO CHROME
+--------------------------------------------------------------
+
+    npm run extension:build
+
+Isso executa:
+  1. npm run build  (gera o build da PWA em dist/)
+  2. Copia os arquivos da extensao para dist-extension/
+  3. Cria o arquivo currency-quick-extension.zip (para o Web Store)
+
+A pasta dist-extension/ e o arquivo .zip serao criados na raiz
+do projeto.
+
+
+--------------------------------------------------------------
+4. INSTALANDO A EXTENSAO NO CHROME
+--------------------------------------------------------------
+
+Opcao A — Modo desenvolvedor (para testes):
+
+  1. Abra o Chrome e acesse: chrome://extensions
+  2. Ative o "Modo desenvolvedor" (toggle no canto superior direito)
+  3. Clique em "Carregar sem compactacao"
+  4. Selecione a pasta: dist-extension/
+  5. A extensao aparecera na barra do Chrome
+
+Para atualizar apos mudancas:
+  1. Rode novamente: npm run extension:build
+  2. Na pagina chrome://extensions, clique no icone de recarregar
+     que aparece na extensao
+
+Opcao B — Instalar pelo ZIP (producao):
+  - Envie o arquivo currency-quick-extension.zip para o
+    Chrome Web Store Developer Dashboard
+
+
+--------------------------------------------------------------
+5. INSTALANDO O PWA NO WINDOWS
+--------------------------------------------------------------
+
+  1. Rode: npm run build && npm run preview
+  2. Acesse: http://localhost:4173 no Chrome
+  3. Na barra de endereco, clique no icone de instalacao
+     (computador com seta para baixo, no canto direito)
+  4. Clique em "Instalar"
+  5. O app sera instalado e aparecera no menu Iniciar
+
+Ou se tiver um dominio publicado:
+  - Acesse a URL no Chrome
+  - O Chrome oferecera instalacao automaticamente
+
+
+--------------------------------------------------------------
+6. CONFIGURANDO PROVEDOR DE COTACAO REAL
+--------------------------------------------------------------
+
+O app usa por padrao a API GRATUITA Frankfurter.app.
+Ela nao precisa de chave mas tem limitacoes:
+  - Nao suporta BRL como base diretamente
+  - Atualiza uma vez por dia em dias uteis
+
+Para usar uma API paga com mais moedas (ex: Open Exchange Rates,
+ExchangeRate-API, Fixer.io):
+
+  --- Para a PWA ---
+
+  1. Copie .env.example para .env:
+       copy .env.example .env
+
+  2. Edite o arquivo .env:
+       VITE_EXCHANGE_PROVIDER=real
+       VITE_EXCHANGE_API_URL=https://openexchangerates.org/api/latest.json
+       VITE_EXCHANGE_API_KEY=sua_chave_aqui
+
+  3. Reconstrua: npm run build
+
+  --- Para a Extensao ---
+
+  1. Clique no icone da extensao no Chrome
+  2. Clique em "Configuracoes" (engrenagem na parte inferior)
+  3. Em "Provedor de Cotacao", selecione "Real — API personalizada"
+  4. Preencha a URL e a chave
+  5. Clique em "Salvar Configuracoes"
+
+
+--------------------------------------------------------------
+7. RODANDO OS TESTES
+--------------------------------------------------------------
+
+Executar todos os testes uma vez:
+    npm test
+
+Modo watch (reexecuta ao salvar arquivos):
+    npm run test:watch
+
+Os testes ficam em:
+  - tests/converter.test.js  (logica de conversao)
+  - tests/parser.test.js     (parser de texto monetario)
+
+Cobertura esperada:
+  - Conversao entre quaisquer pares de moedas via taxa base
+  - Inversao de moedas
+  - Casos de erro (moeda invalida, rates nulo)
+  - Parser de BRL (R$), USD (US$/$), EUR (€/EUR), GBP (£/GBP), JPY (¥)
+  - Rejeicao de datas, telefones, texto sem valor
+
+
+--------------------------------------------------------------
+SUPORTE AO OFFLINE
+--------------------------------------------------------------
+
+Tanto a extensao quanto a PWA armazenam cotacoes em cache
+por 5 minutos (configuravel nas opcoes da extensao).
+
+Se nao houver conexao:
+  - A extensao usa o ultimo cache disponivel
+  - A PWA usa o Service Worker para servir os arquivos do app
+  - O status "Sem conexao (usando cache)" sera exibido
+
+
+--------------------------------------------------------------
+ESTRUTURA DE ARQUIVOS
+--------------------------------------------------------------
+
+  extension/          — Extensao Chrome (carregue esta pasta)
+  src/                — Codigo-fonte da PWA
+  src/shared/         — Logica compartilhada (converter, parser...)
+  scripts/            — Scripts de build
+  tests/              — Testes unitarios
+  dist/               — Build da PWA (gerado por npm run build)
+  dist-extension/     — Build da extensao (gerado por npm run extension:build)
+
+
+==============================================================
+  Duvidas? Leia o README.md para informacoes completas.
+==============================================================
