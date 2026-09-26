@@ -8,7 +8,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       manifest: false,
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,zip}']
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,zip}'],
+        skipWaiting: true,
+        clientsClaim: true
       }
     })
   ],
