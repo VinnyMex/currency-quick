@@ -104,29 +104,56 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:32px
 .footer-links a:hover{color:var(--text)}
 .footer-copy{color:var(--border);font-size:.78rem}
 
-@media(max-width:640px){
-  .nav-links{display:none}
-  .popup-mockup{width:100%;max-width:340px}
-  .donation-card{padding:24px 16px}
-}
-
 /* INSTALL TABS */
 .install-tabs{display:flex;gap:0;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;max-width:480px;margin:0 auto 40px}
-.install-tab{flex:1;padding:12px 20px;background:transparent;color:var(--muted);border:none;cursor:pointer;font-size:.9rem;font-weight:600;transition:all .2s;text-align:center}
+.install-tab{flex:1;padding:12px 16px;background:transparent;color:var(--muted);border:none;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s;text-align:center;white-space:nowrap}
 .install-tab.active{background:var(--accent);color:#fff}
 .install-tab:hover:not(.active){background:rgba(59,130,246,.1);color:var(--text)}
 .install-panel{display:none}.install-panel.active{display:block}
 .manual-note{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:16px 20px;margin-bottom:28px;color:#FCD34D;font-size:.875rem;line-height:1.6;text-align:left}
 .manual-note strong{color:#FBBF24}
-.download-btn{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,#10B981,#059669);color:#fff;text-decoration:none;border-radius:10px;padding:14px 32px;font-weight:700;font-size:1rem;box-shadow:0 4px 16px rgba(16,185,129,.35);transition:all .2s;margin-bottom:24px}
+.download-btn{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,#10B981,#059669);color:#fff;text-decoration:none;border-radius:10px;padding:14px 28px;font-weight:700;font-size:1rem;box-shadow:0 4px 16px rgba(16,185,129,.35);transition:all .2s;margin-bottom:24px}
 .download-btn:hover{opacity:.88;transform:translateY(-2px)}
 .download-btn svg{width:20px;height:20px;fill:currentColor;flex-shrink:0}
 
+/* BOTÕES NAV E HERO */
 .btn-download{background:linear-gradient(135deg,#10B981,#059669);color:#fff;box-shadow:0 4px 16px rgba(16,185,129,.35)}
 .btn-download:hover{background:linear-gradient(135deg,#059669,#047857);transform:translateY(-1px);box-shadow:0 6px 20px rgba(16,185,129,.45)}
-.btn-chrome{background:transparent;color:var(--muted);border:1.5px solid var(--border);font-size:.82rem;padding:8px 16px}
+.btn-chrome{background:transparent;color:var(--muted);border:1.5px solid var(--border);font-size:.82rem;padding:8px 14px;white-space:nowrap}
 .btn-chrome:hover{border-color:var(--muted);color:var(--text);transform:none;box-shadow:none}
-.nav-btns{display:flex;gap:8px;align-items:center}
+.nav-btns{display:flex;gap:8px;align-items:center;flex-shrink:0}
+
+/* HERO DOWNLOAD NOTE */
+.hero-note{width:100%;text-align:center;color:var(--muted);font-size:.78rem;margin-top:8px}
+.hero-note a{color:var(--accent2);text-decoration:none}
+.hero-note a:hover{text-decoration:underline}
+
+/* RESPONSIVIDADE */
+@media(max-width:768px){
+  .nav-links{display:none}
+  .btn-chrome{display:none}
+  .nav-inner{height:56px}
+  .hero{padding:56px 20px 40px}
+  .hero-btns{flex-direction:column;align-items:center;gap:12px}
+  .hero-btns .btn{width:100%;max-width:320px;justify-content:center;font-size:.95rem!important;padding:13px 24px!important}
+  .popup-mockup{width:100%;max-width:340px}
+  .features-grid{grid-template-columns:1fr 1fr}
+  .steps{grid-template-columns:1fr 1fr}
+  .install-tabs{max-width:100%}
+  .install-tab{font-size:.78rem;padding:10px 10px}
+  .donation-card{padding:24px 16px}
+  .download-btn{width:100%;max-width:320px;justify-content:center;padding:13px 20px}
+}
+@media(max-width:480px){
+  .features-grid{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr}
+  .hero h1{font-size:1.8rem}
+  .install-tabs{flex-direction:column;border-radius:10px}
+  .install-tab{border-radius:0;border-bottom:1px solid var(--border)}
+  .install-tab:last-child{border-bottom:none}
+  .section-title{font-size:1.5rem}
+  .donation-card{padding:20px 12px}
+}
 </style>
 </head>
 <body>
@@ -157,10 +184,10 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:32px
   <h1>Converta moedas em segundos no Chrome</h1>
   <p>Cotações em tempo real, 16 moedas, histórico de conversões e modo escuro. Tudo num clique &mdash; sem abrir nenhum site.</p>
   <div class="hero-btns">
-    <a class="btn btn-download" style="font-size:1.05rem;padding:14px 32px" href="/currency-quick.zip" download>&#8659; Baixar Currency Quick &mdash; Gr&aacute;tis</a>
-    <a class="btn btn-outline" href="https://chrome.google.com/webstore" target="_blank" rel="noopener" style="font-size:.85rem;padding:10px 18px;opacity:.7">Chrome Web Store (em breve)</a>
+    <a class="btn btn-download" href="/currency-quick.zip" download>&#8659; Baixar Currency Quick &mdash; Gr&aacute;tis</a>
+    <a class="btn btn-outline btn-chrome-hero" href="https://chrome.google.com/webstore" target="_blank" rel="noopener" style="font-size:.85rem;padding:10px 18px;opacity:.65">Chrome Web Store (em breve)</a>
   </div>
-  <p style="color:var(--muted);font-size:.78rem;margin-top:-20px">~350 KB &bull; Instala&ccedil;&atilde;o manual em 2 min &bull; <a href="#install" style="color:var(--accent2);text-decoration:none">ver instru&ccedil;&otilde;es</a></p>
+  <p class="hero-note">~350 KB &bull; Instala&ccedil;&atilde;o manual em 2 min &bull; <a href="#install">ver instru&ccedil;&otilde;es &darr;</a></p>
 </section>
 
 <!-- MOCKUP -->
