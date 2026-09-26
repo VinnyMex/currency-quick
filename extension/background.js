@@ -36,6 +36,22 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   });
 });
 
+// ── Offscreen document ────────────────────────────────────────────────────────
+const OFFSCREEN_URL = chrome.runtime.getURL('offscreen.html');
+
+async function ensureOffscreen() {
+  const existing = await chrome.offscreen.getContexts({
+    contextTypes: ['OFFSCREEN_DOCUMENT']
+  });
+  if (existing.length === 0) {
+    await chrome.offscreen.createDocument({
+      url: OFFSCREEN_URL,
+      reasons: ['CLIPBOARD'],
+      justification: 'Desenhar widget como PNG e copiar para a área de transferência'
+    });
+  }
+}
+
 // ── Mensagens ─────────────────────────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'GET_RATES' || message.type === 'FORCE_REFRESH_RATES') {
@@ -44,6 +60,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     handleGetRates(requestedBase, force)
       .then((data) => sendResponse({ ok: true, data }))
+      .catch((err) => sendResponse({ ok: false, error: err.message }));
+
+    return true; // resposta assíncrona
+  }
+
+  if (message.type === 'COPY_WIDGET_IMAGE') {
+    ensureOffscreen()
+      .then(() => chrome.runtime.sendMessage({
+        type: 'DRAW_WIDGET_IMAGE',
+        payload: message.payload
+      }))
+      .then((res) => sendResponse(res || { ok: true }))
       .catch((err) => sendResponse({ ok: false, error: err.message }));
 
     return true; // resposta assíncrona
