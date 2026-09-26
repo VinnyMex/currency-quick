@@ -533,16 +533,71 @@ var MPAGO_LINK = 'https://mpago.la/28cELot';
     }
   }
 
-  // ── Copiar ─────────────────────────────────────────────────────────────────
+  // ── Copiar como imagem PNG ──────────────────────────────────────────────────
+  // O popup roda no contexto da extensão — clipboard.write() funciona diretamente.
   function handleCopy() {
-    var text = resultEl.textContent;
-    if (!text) return;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(function () {
-        copyBtn.textContent = 'Copiado!';
-        setTimeout(function () { copyBtn.textContent = 'Copiar'; }, 1500);
-      });
+    var resultText = resultEl.textContent;
+    var rateText   = rateInfoEl.textContent;
+    if (!resultText) return;
+
+    var DPR=2, W=260, PAD=16;
+    var H = PAD + 14 + 8 + 36 + 10 + 18 + 10 + 18 + PAD;
+
+    var canvas = document.createElement('canvas');
+    canvas.width=W*DPR; canvas.height=H*DPR;
+    var ctx=canvas.getContext('2d');
+    ctx.scale(DPR,DPR);
+
+    function rr(x,y,w,h,r){
+      ctx.beginPath();
+      ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+      ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+      ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+      ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
+      ctx.closePath();
     }
+
+    // Fundo
+    rr(0,0,W,H,12); ctx.fillStyle='#0F172A'; ctx.fill();
+    ctx.strokeStyle='#3B82F6'; ctx.lineWidth=1.5; ctx.stroke();
+
+    var y = PAD;
+
+    // Título
+    ctx.font='bold 10px system-ui,sans-serif'; ctx.fillStyle='#93C5FD';
+    ctx.fillText('\u21C4 CURRENCY QUICK', PAD, y+10); y+=22;
+
+    // Resultado principal
+    ctx.font='bold 32px system-ui,sans-serif'; ctx.fillStyle='#F1F5F9';
+    ctx.fillText(resultText, PAD, y+28); y+=40;
+
+    // Taxa
+    ctx.font='12px system-ui,sans-serif'; ctx.fillStyle='#64748B';
+    ctx.fillText(rateText, PAD, y+12); y+=22;
+
+    // Sep crédito
+    ctx.fillStyle='#334155'; ctx.fillRect(0,y,W,1); y+=1;
+    ctx.fillStyle='#0B1120'; ctx.fillRect(0,y,W,H-y);
+    rr(0,H-12,W,12,12); ctx.fillStyle='#0B1120'; ctx.fill();
+    ctx.font='9px system-ui,sans-serif'; ctx.fillStyle='#475569';
+    var cr='Currency Quick  \u2022  vWeb Marketing';
+    ctx.fillText(cr,(W-ctx.measureText(cr).width)/2,y+12);
+
+    var blobP = new Promise(function(res,rej){
+      canvas.toBlob(function(b){b?res(b):rej();}, 'image/png');
+    });
+
+    navigator.clipboard.write([new ClipboardItem({'image/png': blobP})])
+      .then(function(){
+        copyBtn.textContent = '\u2713 Imagem copiada!';
+        setTimeout(function(){ copyBtn.textContent = 'Copiar'; }, 2000);
+      })
+      .catch(function(){
+        // fallback texto
+        navigator.clipboard.writeText(resultText + ' · ' + rateText).catch(function(){});
+        copyBtn.textContent = 'Copiado!';
+        setTimeout(function(){ copyBtn.textContent = 'Copiar'; }, 1500);
+      });
   }
 
   // ── Fetch cotações ─────────────────────────────────────────────────────────

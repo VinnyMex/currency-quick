@@ -38,7 +38,7 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
-  "permissions": ["storage", "contextMenus", "activeTab", "windows", "clipboardWrite"],
+  "permissions": ["storage", "contextMenus", "activeTab", "scripting", "windows", "clipboardWrite"],
   "web_accessible_resources": [
     {
       "resources": ["clipboard.html"],

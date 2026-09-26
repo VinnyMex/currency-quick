@@ -36,45 +36,85 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   });
 });
 
-// ── Offscreen document ────────────────────────────────────────────────────────
-const OFFSCREEN_URL = chrome.runtime.getURL('offscreen.html');
-let _offscreenCreating = null;
-
-async function ensureOffscreen() {
-  const contexts = await chrome.offscreen.getContexts({
-    contextTypes: ['OFFSCREEN_DOCUMENT']
+// ── Geração de PNG e cópia via scripting.executeScript ───────────────────────
+// Injeta uma função no tab atual que desenha o canvas e chama clipboard.write().
+// Roda no mundo ISOLATED da extensão → tem clipboardWrite sem restrições da página.
+async function copyWidgetImageInTab(tabId, payload) {
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    world: 'ISOLATED',
+    func: drawAndCopyToClipboard,
+    args: [payload]
   });
-  if (contexts.length > 0) return; // já existe
-
-  if (_offscreenCreating) {
-    await _offscreenCreating;
-    return;
-  }
-
-  _offscreenCreating = chrome.offscreen.createDocument({
-    url: OFFSCREEN_URL,
-    reasons: ['CLIPBOARD'],
-    justification: 'Gerar PNG do widget de conversão e copiar para área de transferência'
-  });
-  await _offscreenCreating;
-  _offscreenCreating = null;
 }
 
-async function sendToOffscreen(payload) {
-  await ensureOffscreen();
-  // Envia mensagem diretamente para o offscreen via chrome.runtime.sendMessage
-  // O offscreen escuta chrome.runtime.onMessage normalmente
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage(
-      { type: 'DRAW_WIDGET_IMAGE', payload, target: 'offscreen' },
-      (res) => {
-        if (chrome.runtime.lastError) {
-          resolve({ ok: false, error: chrome.runtime.lastError.message });
-        } else {
-          resolve(res || { ok: true });
-        }
-      }
-    );
+// Esta função é serializada e injetada no tab — não pode referenciar closures externas
+function drawAndCopyToClipboard(data) {
+  var DPR=2, W=280, PAD=16, ROW_H=32;
+  var rows = data.rows;
+  var H = PAD+12+6+22+10+1+8 + rows.length*(ROW_H+4) + 4+1+10+14+10+1+20+PAD/2;
+
+  var canvas = document.createElement('canvas');
+  canvas.width=W*DPR; canvas.height=H*DPR;
+  var ctx=canvas.getContext('2d');
+  ctx.scale(DPR,DPR);
+
+  function rr(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();
+  }
+  function tr(t,rx,y){ctx.fillText(t,rx-ctx.measureText(t).width,y);}
+
+  rr(0,0,W,H,14); ctx.fillStyle='#0F172A'; ctx.fill();
+  ctx.strokeStyle='#3B82F6'; ctx.lineWidth=1.5; ctx.stroke();
+
+  var y=PAD;
+  ctx.font='bold 10px system-ui,sans-serif'; ctx.fillStyle='#93C5FD';
+  ctx.fillText('\u21C4 CURRENCY QUICK',PAD,y+10); y+=18;
+
+  ctx.font='bold 18px system-ui,sans-serif'; ctx.fillStyle='#F1F5F9';
+  ctx.fillText(data.original,PAD,y+16); y+=22;
+
+  ctx.fillStyle='#1E293B'; ctx.fillRect(PAD,y,W-PAD*2,1); y+=9;
+
+  rows.forEach(function(row){
+    rr(PAD,y,W-PAD*2,ROW_H,8);
+    if(row.isSource){
+      ctx.fillStyle='rgba(59,130,246,0.12)';ctx.fill();
+      ctx.strokeStyle='rgba(59,130,246,0.3)';ctx.lineWidth=1;ctx.stroke();
+    } else {ctx.fillStyle='#1E293B';ctx.fill();}
+    ctx.font='bold 11px system-ui,sans-serif';
+    ctx.fillStyle=row.isSource?'#93C5FD':'#64748B';
+    ctx.fillText(row.code,PAD+10,y+ROW_H/2+4);
+    ctx.font='bold 13px system-ui,sans-serif';
+    ctx.fillStyle=row.isSource?'#93C5FD':'#F1F5F9';
+    tr(row.value,W-PAD-10,y+ROW_H/2+4);
+    y+=ROW_H+4;
+  });
+
+  y+=4;
+  ctx.fillStyle='#1E293B'; ctx.fillRect(PAD,y,W-PAD*2,1); y+=10;
+  ctx.font='10px system-ui,sans-serif';
+  ctx.fillStyle=data.fromCache?'#F59E0B':'#22C55E';
+  ctx.fillText(data.fromCache?'\u26A1 cache':'\u25CF ao vivo',PAD,y+10); y+=20;
+
+  ctx.fillStyle='#334155'; ctx.fillRect(0,y,W,1); y+=1;
+  ctx.fillStyle='#0B1120'; ctx.fillRect(0,y,W,H-y);
+  rr(0,H-14,W,14,14); ctx.fillStyle='#0B1120'; ctx.fill();
+  ctx.font='9px system-ui,sans-serif'; ctx.fillStyle='#475569';
+  var cr='Currency Quick  \u2022  vWeb Marketing';
+  ctx.fillText(cr,(W-ctx.measureText(cr).width)/2,y+13);
+
+  return new Promise(function(resolve,reject){
+    var bp=new Promise(function(res,rej){
+      canvas.toBlob(function(b){b?res(b):rej(new Error('toBlob'));}, 'image/png');
+    });
+    navigator.clipboard.write([new ClipboardItem({'image/png':bp})])
+      .then(resolve).catch(reject);
   });
 }
 
@@ -95,8 +135,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'COPY_WIDGET_IMAGE') {
-    sendToOffscreen(message.payload)
-      .then((res) => sendResponse(res))
+    const tabId = sender && sender.tab && sender.tab.id;
+    if (!tabId) { sendResponse({ ok: false, error: 'sem tabId' }); return; }
+
+    copyWidgetImageInTab(tabId, message.payload)
+      .then(() => sendResponse({ ok: true }))
       .catch((err) => sendResponse({ ok: false, error: err.message }));
 
     return true;

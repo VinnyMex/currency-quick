@@ -271,56 +271,40 @@
     });
   }
 
-  // ── Copiar widget como imagem PNG via iframe da extensão ───────────────────
-  // O iframe carrega clipboard.html que roda no contexto da extensão
-  // e tem permissão total ao clipboard — sem restrições da página hospedeira.
+  // ── Copiar widget como imagem PNG ──────────────────────────────────────────
+  // Envia payload ao background que injeta a função desenhadora via
+  // chrome.scripting.executeScript — roda no mundo isolado da extensão
+  // e tem acesso ao clipboard.write() sem restrições da página.
   function copyWidgetAsImage(parsed, conversions, ratesData, btn) {
+    if (!isContextValid()) return;
+
     var rows = TARGET_CURRENCIES
       .filter(function (c) { return conversions[c] !== undefined; })
       .map(function (c) {
         return { code: c, value: formatCurrency(conversions[c], c), isSource: c === parsed.currency };
       });
 
-    var payload = {
-      original:  formatCurrency(parsed.value, parsed.currency),
-      rows:      rows,
-      fromCache: !!ratesData.fromCache
-    };
-
     btn.textContent = '...';
 
-    // Criar iframe invisível apontando para clipboard.html da extensão
-    var iframe = document.createElement('iframe');
-    iframe.src = chrome.runtime.getURL('clipboard.html');
-    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;border:none;pointer-events:none';
-    document.body.appendChild(iframe);
-
-    // Listener para resposta do iframe
-    function onMsg(e) {
-      if (!e.data || e.data.type !== 'CQ_DONE') return;
-      window.removeEventListener('message', onMsg);
-      document.body.removeChild(iframe);
-
-      if (e.data.ok) {
-        btn.textContent = '\u2713 Imagem copiada!';
-      } else {
-        btn.textContent = '\u2713 Copiado';
-      }
-      setTimeout(function () { btn.textContent = 'Copiar'; }, 2000);
+    try {
+      chrome.runtime.sendMessage({
+        type: 'COPY_WIDGET_IMAGE',
+        payload: {
+          original:  formatCurrency(parsed.value, parsed.currency),
+          rows:      rows,
+          fromCache: !!ratesData.fromCache
+        }
+      }, function (response) {
+        if (chrome.runtime.lastError) {
+          btn.textContent = 'Copiar';
+          return;
+        }
+        btn.textContent = (response && response.ok) ? '\u2713 Imagem copiada!' : '\u2713 Copiado';
+        setTimeout(function () { btn.textContent = 'Copiar'; }, 2000);
+      });
+    } catch (e) {
+      btn.textContent = 'Copiar';
     }
-    window.addEventListener('message', onMsg);
-
-    // Enviar dados ao iframe assim que carregar
-    iframe.addEventListener('load', function () {
-      iframe.contentWindow.postMessage({ type: 'CQ_DRAW', payload: payload }, '*');
-    });
-
-    // Timeout de segurança
-    setTimeout(function () {
-      window.removeEventListener('message', onMsg);
-      if (iframe.parentNode) document.body.removeChild(iframe);
-      if (btn.textContent === '...') btn.textContent = 'Copiar';
-    }, 5000);
   }
 
   function fallbackCopy(text) {
