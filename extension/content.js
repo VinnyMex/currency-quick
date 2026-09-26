@@ -233,18 +233,7 @@
     copyBtn.textContent = 'Copiar';
     copyBtn.addEventListener('click', function (e) {
       e.stopPropagation();
-      var lines = TARGET_CURRENCIES
-        .filter(function (c) { return conversions[c] !== undefined; })
-        .map(function (c) { return formatCurrency(conversions[c], c); });
-      var text = lines.join(' | ');
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(function () {
-          copyBtn.textContent = '✓ Copiado';
-          setTimeout(function () { copyBtn.textContent = 'Copiar'; }, 1500);
-        }).catch(function () { fallbackCopy(text); });
-      } else {
-        fallbackCopy(text);
-      }
+      copyWidgetAsImage(parsed, conversions, ratesData, copyBtn);
     });
 
     footer.appendChild(statusEl);
@@ -280,6 +269,176 @@
       widget.style.left = px + 'px';
       widget.style.top  = py + 'px';
     });
+  }
+
+  // ── Copiar widget como imagem PNG ──────────────────────────────────────────
+  function copyWidgetAsImage(parsed, conversions, ratesData, btn) {
+    // Paleta de cores idêntica ao CSS do widget
+    var C = {
+      bg:        '#0F172A',
+      surface:   '#1E293B',
+      surface2:  '#263347',
+      border:    '#3B82F6',
+      borderDim: '#1E293B',
+      accent:    '#3B82F6',
+      accentDim: 'rgba(59,130,246,0.15)',
+      accentText:'#93C5FD',
+      text:      '#F1F5F9',
+      muted:     '#64748B',
+      green:     '#22C55E',
+      amber:     '#F59E0B',
+      credit:    '#334155'
+    };
+
+    var DPR    = Math.min(window.devicePixelRatio || 1, 2); // max 2x
+    var W      = 280;   // largura lógica
+    var PAD    = 16;    // padding lateral
+    var ROW_H  = 32;    // altura de cada linha de moeda
+    var rows   = TARGET_CURRENCIES.filter(function(c){ return conversions[c] !== undefined; });
+    var H      = 14 + 28 + 10 + 1 + 8 + rows.length * (ROW_H + 4) + 8 + 28 + 12 + 18 + 10;
+    // H = topPad + title+original + sep + rates + footer + credit
+
+    var canvas = document.createElement('canvas');
+    canvas.width  = W  * DPR;
+    canvas.height = H  * DPR;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(DPR, DPR);
+
+    // ── Fundo com bordas arredondadas ──────────────────────────────────────
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    // Fundo principal
+    roundRect(0, 0, W, H, 14);
+    ctx.fillStyle = C.bg;
+    ctx.fill();
+    // Borda azul
+    ctx.strokeStyle = C.border;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    var y = 14;
+
+    // ── Título ─────────────────────────────────────────────────────────────
+    ctx.font = 'bold 10px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = C.accentText;
+    ctx.letterSpacing = '0.05em';
+    ctx.fillText('⇄ CURRENCY QUICK', PAD, y + 10);
+    y += 18;
+
+    // ── Valor original ──────────────────────────────────────────────────────
+    ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = C.text;
+    ctx.letterSpacing = '0';
+    ctx.fillText(formatCurrency(parsed.value, parsed.currency), PAD, y + 14);
+    y += 24;
+
+    // ── Separador ───────────────────────────────────────────────────────────
+    ctx.fillStyle = C.borderDim;
+    ctx.fillRect(PAD, y, W - PAD * 2, 1);
+    y += 9;
+
+    // ── Linhas de moeda ─────────────────────────────────────────────────────
+    rows.forEach(function(code) {
+      var val      = conversions[code];
+      var isSource = code === parsed.currency;
+
+      // Fundo da linha
+      roundRect(PAD, y, W - PAD * 2, ROW_H, 8);
+      if (isSource) {
+        ctx.fillStyle = 'rgba(59,130,246,0.12)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(59,130,246,0.25)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = C.surface;
+        ctx.fill();
+      }
+
+      // Label (moeda)
+      ctx.font = 'bold 11px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = isSource ? C.accentText : C.muted;
+      ctx.fillText(code, PAD + 10, y + ROW_H / 2 + 4);
+
+      // Valor formatado (alinhado à direita)
+      var formatted = formatCurrency(val, code);
+      ctx.font = 'bold 14px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = isSource ? C.accentText : C.text;
+      var tw = ctx.measureText(formatted).width;
+      ctx.fillText(formatted, W - PAD - 10 - tw, y + ROW_H / 2 + 4);
+
+      y += ROW_H + 4;
+    });
+
+    y += 4;
+
+    // ── Linha separadora footer ─────────────────────────────────────────────
+    ctx.fillStyle = C.borderDim;
+    ctx.fillRect(PAD, y, W - PAD * 2, 1);
+    y += 10;
+
+    // ── Status (cache / ao vivo) ────────────────────────────────────────────
+    ctx.font = '10px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = ratesData.fromCache ? C.amber : C.green;
+    ctx.fillText(ratesData.fromCache ? '⚡ cache' : '● ao vivo', PAD, y + 10);
+    y += 18;
+
+    // ── Créditos ────────────────────────────────────────────────────────────
+    ctx.fillStyle = C.credit;
+    ctx.fillRect(0, y, W, 1);
+    y += 1;
+
+    // Fundo crédito levemente diferente
+    ctx.fillStyle = '#0B1120';
+    ctx.fillRect(0, y, W, H - y);
+    // Arredondar canto inferior
+    roundRect(0, H - 14, W, 14, 14);
+    ctx.fillStyle = '#0B1120';
+    ctx.fill();
+
+    ctx.font = '9px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = C.credit;
+    var creditText = 'Currency Quick • vWeb Marketing';
+    var ctw = ctx.measureText(creditText).width;
+    ctx.fillText(creditText, (W - ctw) / 2, y + 9);
+
+    // ── Copiar para clipboard ────────────────────────────────────────────────
+    canvas.toBlob(function(blob) {
+      if (!blob) { fallbackCopyText(parsed, conversions); return; }
+      try {
+        var item = new ClipboardItem({ 'image/png': blob });
+        navigator.clipboard.write([item]).then(function() {
+          btn.textContent = '✓ Imagem copiada';
+          setTimeout(function() { btn.textContent = 'Copiar'; }, 2000);
+        }).catch(function() {
+          fallbackCopyText(parsed, conversions);
+          btn.textContent = '✓ Texto copiado';
+          setTimeout(function() { btn.textContent = 'Copiar'; }, 2000);
+        });
+      } catch(e) {
+        fallbackCopyText(parsed, conversions);
+      }
+    }, 'image/png');
+  }
+
+  function fallbackCopyText(parsed, conversions) {
+    var lines = TARGET_CURRENCIES
+      .filter(function(c) { return conversions[c] !== undefined; })
+      .map(function(c) { return formatCurrency(conversions[c], c); });
+    var text = formatCurrency(parsed.value, parsed.currency) + '\n' + lines.join(' | ') + '\nCurrency Quick • vWeb Marketing';
+    fallbackCopy(text);
   }
 
   function fallbackCopy(text) {
