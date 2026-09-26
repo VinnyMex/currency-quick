@@ -38,22 +38,51 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 // ── Offscreen document ────────────────────────────────────────────────────────
 const OFFSCREEN_URL = chrome.runtime.getURL('offscreen.html');
+let _offscreenCreating = null;
 
 async function ensureOffscreen() {
-  const existing = await chrome.offscreen.getContexts({
+  const contexts = await chrome.offscreen.getContexts({
     contextTypes: ['OFFSCREEN_DOCUMENT']
   });
-  if (existing.length === 0) {
-    await chrome.offscreen.createDocument({
-      url: OFFSCREEN_URL,
-      reasons: ['CLIPBOARD'],
-      justification: 'Desenhar widget como PNG e copiar para a área de transferência'
-    });
+  if (contexts.length > 0) return; // já existe
+
+  if (_offscreenCreating) {
+    await _offscreenCreating;
+    return;
   }
+
+  _offscreenCreating = chrome.offscreen.createDocument({
+    url: OFFSCREEN_URL,
+    reasons: ['CLIPBOARD'],
+    justification: 'Gerar PNG do widget de conversão e copiar para área de transferência'
+  });
+  await _offscreenCreating;
+  _offscreenCreating = null;
+}
+
+async function sendToOffscreen(payload) {
+  await ensureOffscreen();
+  // Envia mensagem diretamente para o offscreen via chrome.runtime.sendMessage
+  // O offscreen escuta chrome.runtime.onMessage normalmente
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(
+      { type: 'DRAW_WIDGET_IMAGE', payload, target: 'offscreen' },
+      (res) => {
+        if (chrome.runtime.lastError) {
+          resolve({ ok: false, error: chrome.runtime.lastError.message });
+        } else {
+          resolve(res || { ok: true });
+        }
+      }
+    );
+  });
 }
 
 // ── Mensagens ─────────────────────────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Ignorar mensagens destinadas ao offscreen (evitar loop)
+  if (message.target === 'offscreen') return;
+
   if (message.type === 'GET_RATES' || message.type === 'FORCE_REFRESH_RATES') {
     const requestedBase = (message.base || 'USD').toUpperCase();
     const force = message.type === 'FORCE_REFRESH_RATES';
@@ -62,19 +91,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then((data) => sendResponse({ ok: true, data }))
       .catch((err) => sendResponse({ ok: false, error: err.message }));
 
-    return true; // resposta assíncrona
+    return true;
   }
 
   if (message.type === 'COPY_WIDGET_IMAGE') {
-    ensureOffscreen()
-      .then(() => chrome.runtime.sendMessage({
-        type: 'DRAW_WIDGET_IMAGE',
-        payload: message.payload
-      }))
-      .then((res) => sendResponse(res || { ok: true }))
+    sendToOffscreen(message.payload)
+      .then((res) => sendResponse(res))
       .catch((err) => sendResponse({ ok: false, error: err.message }));
 
-    return true; // resposta assíncrona
+    return true;
   }
 });
 

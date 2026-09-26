@@ -1,7 +1,7 @@
 // offscreen.js — Roda num documento offscreen (tem DOM + canvas + clipboard)
 
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
-  if (msg.type !== 'DRAW_WIDGET_IMAGE') return;
+  if (msg.type !== 'DRAW_WIDGET_IMAGE' || msg.target !== 'offscreen') return;
   drawAndCopy(msg.payload)
     .then(function () { sendResponse({ ok: true }); })
     .catch(function (err) { sendResponse({ ok: false, error: err.message }); });
