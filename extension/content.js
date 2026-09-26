@@ -271,125 +271,56 @@
     });
   }
 
-  // ── Copiar widget como imagem PNG ──────────────────────────────────────────
-  // Desenhamos num canvas dentro do content script e chamamos clipboard.write()
-  // diretamente — o user gesture do clique mantém a permissão ativa.
+  // ── Copiar widget como imagem PNG via iframe da extensão ───────────────────
+  // O iframe carrega clipboard.html que roda no contexto da extensão
+  // e tem permissão total ao clipboard — sem restrições da página hospedeira.
   function copyWidgetAsImage(parsed, conversions, ratesData, btn) {
-    var DPR   = 2;
-    var W     = 280;
-    var PAD   = 16;
-    var ROW_H = 32;
-    var rows  = TARGET_CURRENCIES.filter(function (c) { return conversions[c] !== undefined; });
-
-    // Altura total
-    var H = PAD + 12 + 6 + 22 + 10 + 1 + 8
-          + rows.length * (ROW_H + 4)
-          + 4 + 1 + 10 + 14 + 10 + 1 + 20 + PAD / 2;
-
-    var canvas = document.createElement('canvas');
-    canvas.width  = W * DPR;
-    canvas.height = H * DPR;
-    var ctx = canvas.getContext('2d');
-    ctx.scale(DPR, DPR);
-
-    // helpers
-    function rr(x, y, w, h, r) {
-      ctx.beginPath();
-      ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
-      ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-      ctx.lineTo(x+w,y+h-r);
-      ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-      ctx.lineTo(x+r,y+h);
-      ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-      ctx.lineTo(x,y+r);
-      ctx.quadraticCurveTo(x,y,x+r,y);
-      ctx.closePath();
-    }
-    function textR(t, rx, y) {
-      ctx.fillText(t, rx - ctx.measureText(t).width, y);
-    }
-
-    // fundo
-    rr(0,0,W,H,14);
-    ctx.fillStyle = '#0F172A'; ctx.fill();
-    ctx.strokeStyle = '#3B82F6'; ctx.lineWidth = 1.5; ctx.stroke();
-
-    var y = PAD;
-
-    // título
-    ctx.font = 'bold 10px system-ui,sans-serif';
-    ctx.fillStyle = '#93C5FD';
-    ctx.fillText('\u21C4 CURRENCY QUICK', PAD, y+10);
-    y += 18;
-
-    // valor original
-    ctx.font = 'bold 18px system-ui,sans-serif';
-    ctx.fillStyle = '#F1F5F9';
-    ctx.fillText(formatCurrency(parsed.value, parsed.currency), PAD, y+16);
-    y += 22;
-
-    // sep
-    ctx.fillStyle = '#1E293B'; ctx.fillRect(PAD, y, W-PAD*2, 1); y += 9;
-
-    // linhas
-    rows.forEach(function (code) {
-      var val = conversions[code];
-      var src = code === parsed.currency;
-      rr(PAD, y, W-PAD*2, ROW_H, 8);
-      if (src) {
-        ctx.fillStyle = 'rgba(59,130,246,0.12)'; ctx.fill();
-        ctx.strokeStyle = 'rgba(59,130,246,0.3)'; ctx.lineWidth = 1; ctx.stroke();
-      } else {
-        ctx.fillStyle = '#1E293B'; ctx.fill();
-      }
-      ctx.font = 'bold 11px system-ui,sans-serif';
-      ctx.fillStyle = src ? '#93C5FD' : '#64748B';
-      ctx.fillText(code, PAD+10, y+ROW_H/2+4);
-      ctx.font = 'bold 13px system-ui,sans-serif';
-      ctx.fillStyle = src ? '#93C5FD' : '#F1F5F9';
-      textR(formatCurrency(val, code), W-PAD-10, y+ROW_H/2+4);
-      y += ROW_H + 4;
-    });
-
-    y += 4;
-    // sep footer
-    ctx.fillStyle = '#1E293B'; ctx.fillRect(PAD, y, W-PAD*2, 1); y += 10;
-
-    // status
-    ctx.font = '10px system-ui,sans-serif';
-    ctx.fillStyle = ratesData.fromCache ? '#F59E0B' : '#22C55E';
-    ctx.fillText(ratesData.fromCache ? '\u26A1 cache' : '\u25CF ao vivo', PAD, y+10);
-    y += 20;
-
-    // crédito
-    ctx.fillStyle = '#334155'; ctx.fillRect(0, y, W, 1); y += 1;
-    ctx.fillStyle = '#0B1120'; ctx.fillRect(0, y, W, H-y);
-    rr(0, H-14, W, 14, 14); ctx.fillStyle = '#0B1120'; ctx.fill();
-    ctx.font = '9px system-ui,sans-serif';
-    ctx.fillStyle = '#475569';
-    var cr = 'Currency Quick  \u2022  vWeb Marketing';
-    ctx.fillText(cr, (W - ctx.measureText(cr).width)/2, y+13);
-
-    // ── Copiar via ClipboardItem com Promise (mantém user gesture) ───────────
-    // ClipboardItem aceita Promise<Blob> — o vínculo com o clique é preservado
-    var blobPromise = new Promise(function (resolve, reject) {
-      canvas.toBlob(function (blob) {
-        if (blob) resolve(blob); else reject(new Error('toBlob falhou'));
-      }, 'image/png');
-    });
-
-    navigator.clipboard.write([new ClipboardItem({ 'image/png': blobPromise })])
-      .then(function () {
-        btn.textContent = '\u2713 Imagem copiada!';
-        setTimeout(function () { btn.textContent = 'Copiar'; }, 2000);
-      })
-      .catch(function () {
-        // fallback texto
-        var txt = rows.map(function (c) { return formatCurrency(conversions[c], c); }).join(' | ');
-        navigator.clipboard.writeText(txt).catch(function () {});
-        btn.textContent = '\u2713 Copiado';
-        setTimeout(function () { btn.textContent = 'Copiar'; }, 2000);
+    var rows = TARGET_CURRENCIES
+      .filter(function (c) { return conversions[c] !== undefined; })
+      .map(function (c) {
+        return { code: c, value: formatCurrency(conversions[c], c), isSource: c === parsed.currency };
       });
+
+    var payload = {
+      original:  formatCurrency(parsed.value, parsed.currency),
+      rows:      rows,
+      fromCache: !!ratesData.fromCache
+    };
+
+    btn.textContent = '...';
+
+    // Criar iframe invisível apontando para clipboard.html da extensão
+    var iframe = document.createElement('iframe');
+    iframe.src = chrome.runtime.getURL('clipboard.html');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;border:none;pointer-events:none';
+    document.body.appendChild(iframe);
+
+    // Listener para resposta do iframe
+    function onMsg(e) {
+      if (!e.data || e.data.type !== 'CQ_DONE') return;
+      window.removeEventListener('message', onMsg);
+      document.body.removeChild(iframe);
+
+      if (e.data.ok) {
+        btn.textContent = '\u2713 Imagem copiada!';
+      } else {
+        btn.textContent = '\u2713 Copiado';
+      }
+      setTimeout(function () { btn.textContent = 'Copiar'; }, 2000);
+    }
+    window.addEventListener('message', onMsg);
+
+    // Enviar dados ao iframe assim que carregar
+    iframe.addEventListener('load', function () {
+      iframe.contentWindow.postMessage({ type: 'CQ_DRAW', payload: payload }, '*');
+    });
+
+    // Timeout de segurança
+    setTimeout(function () {
+      window.removeEventListener('message', onMsg);
+      if (iframe.parentNode) document.body.removeChild(iframe);
+      if (btn.textContent === '...') btn.textContent = 'Copiar';
+    }, 5000);
   }
 
   function fallbackCopy(text) {
