@@ -170,6 +170,12 @@
     var widget = el('div', '');
     widget.id = WIDGET_ID;
 
+    // Aplicar tema lido do storage
+    chrome.storage.local.get('cq_prefs', function (result) {
+      var theme = (result.cq_prefs && result.cq_prefs.theme) || 'dark';
+      if (theme === 'light') widget.classList.add('cq-light');
+    });
+
     // ── Header
     var header = el('div', 'cq-header');
     var title = el('span', 'cq-title');
@@ -286,90 +292,215 @@
 
     btn.textContent = '...';
 
-    // Desenhar canvas aqui mesmo no content script
-    var canvas = buildWidgetCanvas(parsed, conversions, ratesData, rows);
+    // Ler tema salvo antes de desenhar
+    chrome.storage.local.get('cq_prefs', function (result) {
+      var theme = (result.cq_prefs && result.cq_prefs.theme) || 'dark';
+      var canvas = buildWidgetCanvas(parsed, conversions, ratesData, rows, theme);
+      _doCopyCanvas(canvas, rows, parsed, ratesData, btn);
+    });
+  }
 
-    // toBlob e clipboard.write direto — o user gesture do clique ainda é válido
-    canvas.toBlob(function (blob) {
-      if (!blob) { btn.textContent = 'Copiar'; return; }
+  function _doCopyCanvas(canvas, rows, parsed, ratesData, btn) {
 
-      var item = new ClipboardItem({ 'image/png': blob });
-      navigator.clipboard.write([item])
+    // Passa a Promise do blob direto para ClipboardItem — mantém cadeia de user gesture
+    var blobPromise = new Promise(function (resolve, reject) {
+      canvas.toBlob(function (blob) {
+        if (blob) { resolve(blob); } else { reject(new Error('toBlob retornou null')); }
+      }, 'image/png');
+    });
+
+    var clipItem;
+    try {
+      clipItem = new ClipboardItem({ 'image/png': blobPromise });
+    } catch (e) {
+      clipItem = null;
+    }
+
+    if (clipItem && navigator.clipboard && navigator.clipboard.write) {
+      navigator.clipboard.write([clipItem])
         .then(function () {
           btn.textContent = '\u2713 Imagem copiada!';
           setTimeout(function () { btn.textContent = 'Copiar'; }, 2500);
         })
         .catch(function (err) {
-          console.warn('[CQ] clipboard.write falhou:', err);
-          // fallback: tenta via scripting no background
-          try {
-            chrome.runtime.sendMessage({
-              type: 'COPY_WIDGET_IMAGE',
-              payload: {
-                original:  formatCurrency(parsed.value, parsed.currency),
-                rows:      rows,
-                fromCache: !!ratesData.fromCache
-              }
-            }, function (response) {
-              if (chrome.runtime.lastError) { btn.textContent = 'Copiar'; return; }
-              btn.textContent = (response && response.ok) ? '\u2713 Imagem copiada!' : '\u2713 Copiado';
-              setTimeout(function () { btn.textContent = 'Copiar'; }, 2500);
-            });
-          } catch (e2) { btn.textContent = 'Copiar'; }
+          console.warn('[CQ] clipboard.write falhou:', err.name, err.message);
+          // fallback: tenta via scripting injetado pelo background
+          tryCopyViaBackground(rows, formatCurrency(parsed.value, parsed.currency), ratesData, btn);
         });
-    }, 'image/png');
+    } else {
+      tryCopyViaBackground(rows, formatCurrency(parsed.value, parsed.currency), ratesData, btn);
+    }
   }
 
-  function buildWidgetCanvas(parsed, conversions, ratesData, rows) {
-    var DPR=2, W=280, PAD=16, ROW_H=32;
-    var H = PAD+12+6+22+10+1+8 + rows.length*(ROW_H+4) + 4+1+10+14+10+1+20+PAD/2;
-    var canvas = document.createElement('canvas');
-    canvas.width=W*DPR; canvas.height=H*DPR;
-    var ctx=canvas.getContext('2d');
-    ctx.scale(DPR,DPR);
+  function tryCopyViaBackground(rows, originalText, ratesData, btn) {
+    if (!isContextValid()) { btn.textContent = 'Copiar'; return; }
+    try {
+      chrome.runtime.sendMessage({
+        type: 'COPY_WIDGET_IMAGE',
+        payload: {
+          original:  originalText,
+          rows:      rows,
+          fromCache: !!ratesData.fromCache
+        }
+      }, function (response) {
+        if (chrome.runtime.lastError) {
+          console.warn('[CQ] sendMessage erro:', chrome.runtime.lastError.message);
+          btn.textContent = 'Copiar';
+          return;
+        }
+        if (response && response.ok) {
+          btn.textContent = '\u2713 Imagem copiada!';
+          setTimeout(function () { btn.textContent = 'Copiar'; }, 2500);
+        } else {
+          console.warn('[CQ] background falhou:', response && response.error);
+          btn.textContent = 'Copiar';
+        }
+      });
+    } catch (e) {
+      console.warn('[CQ] tryCopyViaBackground erro:', e.message);
+      btn.textContent = 'Copiar';
+    }
+  }
 
-    function rr(x,y,w,h,r){
+  function getThemeColors(theme) {
+    var dark = theme !== 'light';
+    return {
+      bg:          dark ? '#0F172A' : '#F1F5F9',   // fundo do card
+      bgCard:      dark ? '#0F172A' : '#FFFFFF',   // mesmo que bg para o card principal
+      bgRow:       dark ? '#1E293B' : '#E2E8F0',   // linhas normais
+      bgCredit:    dark ? '#0B1120' : '#E2E8F0',   // faixa de créditos
+      border:      dark ? '#3B82F6' : '#2563EB',   // borda do card
+      sep:         dark ? '#1E293B' : '#CBD5E1',   // separadores
+      accent:      dark ? '#93C5FD' : '#1D4ED8',   // texto da moeda source + título
+      text:        dark ? '#F1F5F9' : '#0F172A',   // texto principal
+      textMuted:   dark ? '#64748B' : '#94A3B8',   // código das moedas normais
+      textCredit:  dark ? '#64748B' : '#94A3B8',   // texto de créditos
+      srcBg:       dark ? 'rgba(59,130,246,0.12)' : 'rgba(37,99,235,0.10)',
+      srcBorder:   dark ? 'rgba(59,130,246,0.25)' : 'rgba(37,99,235,0.35)',
+      success:     dark ? '#22C55E' : '#16A34A',
+      warning:     dark ? '#F59E0B' : '#D97706'
+    };
+  }
+
+  function buildWidgetCanvas(parsed, conversions, ratesData, rows, theme) {
+    var c      = getThemeColors(theme);
+    var DPR    = 3;
+    var W      = 300;
+    var PAD_H  = 14;   // padding top/bottom
+    var PAD_W  = 16;   // padding left/right
+    var RADIUS = 14;
+    var ROW_H  = 30;
+    var ROW_R  = 8;
+    var ROW_GAP = 4;
+    var CR_H   = 24;   // altura da faixa de créditos dentro do card
+
+    // Altura total do card (tudo dentro, sem área externa)
+    var headerH = 14 + 10 + 18 + 10 + 1 + 8; // título + gap + original + gap + sep + gap
+    var rowsH   = rows.length * ROW_H + Math.max(0, rows.length - 1) * ROW_GAP + 10;
+    var footerH = 1 + 8 + 12 + 10; // sep + pad + status + gap
+    var CARD_H  = PAD_H + headerH + rowsH + footerH + 1 + CR_H; // +1 sep créditos
+
+    var canvas = document.createElement('canvas');
+    canvas.width  = W * DPR;
+    canvas.height = CARD_H * DPR;
+    var ctx = canvas.getContext('2d', { alpha: true });
+    ctx.scale(DPR, DPR);
+
+    function rrPath(x, y, w, h, r) {
       ctx.beginPath();
-      ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-      ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-      ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-      ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
       ctx.closePath();
     }
-    function tr(t,rx,y){ctx.fillText(t,rx-ctx.measureText(t).width,y);}
 
-    rr(0,0,W,H,14); ctx.fillStyle='#0F172A'; ctx.fill();
-    ctx.strokeStyle='#3B82F6'; ctx.lineWidth=1.5; ctx.stroke();
+    function textRight(t, rx, ty) {
+      ctx.fillText(t, rx - ctx.measureText(t).width, ty);
+    }
 
-    var y=PAD;
-    ctx.font='bold 10px system-ui,sans-serif'; ctx.fillStyle='#93C5FD';
-    ctx.fillText('\u21C4 CURRENCY QUICK',PAD,y+10); y+=18;
-    ctx.font='bold 18px system-ui,sans-serif'; ctx.fillStyle='#F1F5F9';
-    ctx.fillText(formatCurrency(parsed.value, parsed.currency),PAD,y+16); y+=22;
-    ctx.fillStyle='#1E293B'; ctx.fillRect(PAD,y,W-PAD*2,1); y+=9;
+    // Clip = card inteiro — cantos ficam transparentes
+    ctx.save();
+    rrPath(0, 0, W, CARD_H, RADIUS);
+    ctx.clip();
 
-    rows.forEach(function(code){
-      var val=conversions[code], src=code===parsed.currency;
-      rr(PAD,y,W-PAD*2,ROW_H,8);
-      if(src){ctx.fillStyle='rgba(59,130,246,0.12)';ctx.fill();ctx.strokeStyle='rgba(59,130,246,0.3)';ctx.lineWidth=1;ctx.stroke();}
-      else{ctx.fillStyle='#1E293B';ctx.fill();}
-      ctx.font='bold 11px system-ui,sans-serif'; ctx.fillStyle=src?'#93C5FD':'#64748B';
-      ctx.fillText(code,PAD+10,y+ROW_H/2+4);
-      ctx.font='bold 13px system-ui,sans-serif'; ctx.fillStyle=src?'#93C5FD':'#F1F5F9';
-      tr(formatCurrency(val,code),W-PAD-10,y+ROW_H/2+4);
-      y+=ROW_H+4;
+    // Fundo do card
+    ctx.fillStyle = c.bgCard;
+    ctx.fillRect(0, 0, W, CARD_H);
+
+    var cy = PAD_H;
+
+    // Título
+    ctx.font = 'bold 12px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.fillStyle = c.accent;
+    ctx.fillText('\u21C4 CURRENCY QUICK', PAD_W, cy + 12);
+    cy += 14 + 10;
+
+    // Valor original
+    ctx.font = 'bold 18px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.fillStyle = c.text;
+    ctx.fillText(formatCurrency(parsed.value, parsed.currency), PAD_W, cy + 16);
+    cy += 18 + 10;
+
+    // Separador
+    ctx.fillStyle = c.sep;
+    ctx.fillRect(PAD_W, cy, W - PAD_W * 2, 1);
+    cy += 1 + 8;
+
+    // Rows de conversão
+    rows.forEach(function (row, i) {
+      var src = row.isSource;
+      if (i > 0) cy += ROW_GAP;
+      rrPath(PAD_W, cy, W - PAD_W * 2, ROW_H, ROW_R);
+      if (src) {
+        ctx.fillStyle = c.srcBg; ctx.fill();
+        ctx.strokeStyle = c.srcBorder; ctx.lineWidth = 1; ctx.stroke();
+      } else {
+        ctx.fillStyle = c.bgRow; ctx.fill();
+      }
+      ctx.font = '600 11px system-ui, -apple-system, "Segoe UI", sans-serif';
+      ctx.fillStyle = src ? c.accent : c.textMuted;
+      ctx.fillText(row.code, PAD_W + 10, cy + ROW_H / 2 + 4);
+      ctx.font = 'bold 14px system-ui, -apple-system, "Segoe UI", sans-serif';
+      ctx.fillStyle = src ? c.accent : c.text;
+      textRight(row.value, W - PAD_W - 10, cy + ROW_H / 2 + 4);
+      cy += ROW_H;
     });
 
-    y+=4; ctx.fillStyle='#1E293B'; ctx.fillRect(PAD,y,W-PAD*2,1); y+=10;
-    ctx.font='10px system-ui,sans-serif';
-    ctx.fillStyle=ratesData.fromCache?'#F59E0B':'#22C55E';
-    ctx.fillText(ratesData.fromCache?'\u26A1 cache':'\u25CF ao vivo',PAD,y+10); y+=20;
-    ctx.fillStyle='#334155'; ctx.fillRect(0,y,W,1); y+=1;
-    ctx.fillStyle='#0B1120'; ctx.fillRect(0,y,W,H-y);
-    rr(0,H-14,W,14,14); ctx.fillStyle='#0B1120'; ctx.fill();
-    ctx.font='9px system-ui,sans-serif'; ctx.fillStyle='#475569';
-    var cr='Currency Quick  \u2022  vWeb Marketing';
-    ctx.fillText(cr,(W-ctx.measureText(cr).width)/2,y+13);
+    cy += 10;
+
+    // Footer: sep + status (ao vivo / cache)
+    ctx.fillStyle = c.sep;
+    ctx.fillRect(0, cy, W, 1);
+    cy += 1 + 8;
+    ctx.font = '500 10px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.fillStyle = ratesData.fromCache ? c.warning : c.success;
+    ctx.fillText(ratesData.fromCache ? '\u26A1 cache' : '\u25CF ao vivo', PAD_W, cy + 10);
+    cy += 12 + 10;
+
+    // Faixa de créditos — dentro do card
+    ctx.fillStyle = c.sep;
+    ctx.fillRect(0, cy, W, 1);
+    cy += 1;
+    ctx.fillStyle = c.bgCredit;
+    ctx.fillRect(0, cy, W, CARD_H - cy);
+    ctx.font = '9px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.fillStyle = c.textCredit;
+    var cr = 'Currency Quick  \u2022  vWeb Marketing';
+    ctx.fillText(cr, (W - ctx.measureText(cr).width) / 2, cy + CR_H / 2 + 4);
+
+    ctx.restore(); // fim do clip
+
+    // Borda por cima
+    rrPath(0, 0, W, CARD_H, RADIUS);
+    ctx.strokeStyle = c.border;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
 
     return canvas;
   }

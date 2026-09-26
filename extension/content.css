@@ -1,22 +1,57 @@
 /* Currency Quick — Widget de conversão */
 
+/* ── Tema escuro (padrão) ── */
+#cq-widget {
+  --cq-bg:          #0F172A;
+  --cq-bg-row:      #1E293B;
+  --cq-bg-row-hov:  #263347;
+  --cq-border:      #3B82F6;
+  --cq-sep:         #1E293B;
+  --cq-accent:      #93C5FD;
+  --cq-text:        #F1F5F9;
+  --cq-muted:       #64748B;
+  --cq-src-bg:      rgba(59, 130, 246, 0.12);
+  --cq-src-border:  rgba(59, 130, 246, 0.25);
+  --cq-btn-bg:      rgba(59, 130, 246, 0.15);
+  --cq-btn-border:  rgba(59, 130, 246, 0.35);
+  --cq-close-bg:    rgba(255, 255, 255, 0.06);
+  --cq-shadow:      0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(59, 130, 246, 0.15);
+}
+
+/* ── Tema claro ── */
+#cq-widget.cq-light {
+  --cq-bg:          #FFFFFF;
+  --cq-bg-row:      #E2E8F0;
+  --cq-bg-row-hov:  #DBEAFE;
+  --cq-border:      #2563EB;
+  --cq-sep:         #CBD5E1;
+  --cq-accent:      #1D4ED8;
+  --cq-text:        #0F172A;
+  --cq-muted:       #94A3B8;
+  --cq-src-bg:      rgba(37, 99, 235, 0.10);
+  --cq-src-border:  rgba(37, 99, 235, 0.35);
+  --cq-btn-bg:      rgba(37, 99, 235, 0.12);
+  --cq-btn-border:  rgba(37, 99, 235, 0.4);
+  --cq-close-bg:    rgba(0, 0, 0, 0.06);
+  --cq-shadow:      0 8px 32px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(37, 99, 235, 0.15);
+}
+
 #cq-widget {
   position: fixed;
   z-index: 2147483647;
-  background: #0F172A;
-  color: #F1F5F9;
-  border: 1.5px solid #3B82F6;
+  background: var(--cq-bg);
+  color: var(--cq-text);
+  border: 1.5px solid var(--cq-border);
   border-radius: 14px;
   padding: 14px 16px;
   min-width: 230px;
   max-width: 300px;
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(59, 130, 246, 0.15);
+  box-shadow: var(--cq-shadow);
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 13px;
   line-height: 1.4;
   animation: cq-slide-in 0.15s ease;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
 @keyframes cq-slide-in {
@@ -35,15 +70,15 @@
 #cq-widget .cq-title {
   font-size: 12px;
   font-weight: 700;
-  color: #93C5FD;
+  color: var(--cq-accent);
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 
 #cq-widget .cq-close {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--cq-close-bg);
   border: none;
-  color: #64748B;
+  color: var(--cq-muted);
   cursor: pointer;
   font-size: 12px;
   width: 22px;
@@ -65,7 +100,7 @@
 #cq-widget .cq-original {
   font-size: 18px;
   font-weight: 700;
-  color: #F1F5F9;
+  color: var(--cq-text);
   margin-bottom: 10px;
   letter-spacing: -0.02em;
 }
@@ -80,7 +115,7 @@
 /* ── Separador ── */
 #cq-widget .cq-sep {
   height: 1px;
-  background: #1E293B;
+  background: var(--cq-sep);
   margin-bottom: 8px;
 }
 
@@ -98,36 +133,36 @@
   align-items: center;
   padding: 6px 10px;
   border-radius: 8px;
-  background: #1E293B;
+  background: var(--cq-bg-row);
   transition: background 0.12s;
 }
 #cq-widget .cq-rate-item:hover {
-  background: #263347;
+  background: var(--cq-bg-row-hov);
 }
 #cq-widget .cq-rate-item.cq-rate-source {
-  background: rgba(59, 130, 246, 0.12);
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: var(--cq-src-bg);
+  border: 1px solid var(--cq-src-border);
 }
 
 #cq-widget .cq-rate-label {
   font-size: 11px;
   font-weight: 600;
-  color: #64748B;
+  color: var(--cq-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   min-width: 36px;
 }
 #cq-widget .cq-rate-item.cq-rate-source .cq-rate-label {
-  color: #93C5FD;
+  color: var(--cq-accent);
 }
 
 #cq-widget .cq-rate-value {
   font-size: 14px;
   font-weight: 700;
-  color: #F1F5F9;
+  color: var(--cq-text);
 }
 #cq-widget .cq-rate-item.cq-rate-source .cq-rate-value {
-  color: #93C5FD;
+  color: var(--cq-accent);
 }
 
 /* ── Footer ── */
@@ -136,7 +171,7 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 8px;
-  border-top: 1px solid #1E293B;
+  border-top: 1px solid var(--cq-sep);
 }
 
 #cq-widget .cq-status-text {
@@ -146,9 +181,9 @@
 }
 
 #cq-widget .cq-copy-btn {
-  background: rgba(59, 130, 246, 0.15);
-  color: #93C5FD;
-  border: 1px solid rgba(59, 130, 246, 0.35);
+  background: var(--cq-btn-bg);
+  color: var(--cq-accent);
+  border: 1px solid var(--cq-btn-border);
   border-radius: 6px;
   padding: 4px 12px;
   cursor: pointer;
@@ -158,7 +193,7 @@
   transition: background 0.15s, color 0.15s;
 }
 #cq-widget .cq-copy-btn:hover {
-  background: #3B82F6;
+  background: var(--cq-border);
   color: white;
-  border-color: #3B82F6;
+  border-color: var(--cq-border);
 }

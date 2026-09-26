@@ -538,65 +538,157 @@ var MPAGO_LINK = 'https://mpago.la/28cELot';
   function handleCopy() {
     var resultText = resultEl.textContent;
     var rateText   = rateInfoEl.textContent;
-    if (!resultText) return;
+    if (!resultText || !resultText.trim()) return;
 
-    var DPR=2, W=260, PAD=16;
-    var H = PAD + 14 + 8 + 36 + 10 + 18 + 10 + 18 + PAD;
+    var dark = state.theme !== 'light';
+    var c = {
+      bgCard:    dark ? '#0F172A' : '#FFFFFF',
+      bgRow:     dark ? '#1E293B' : '#E2E8F0',
+      bgCredit:  dark ? '#0B1120' : '#E2E8F0',
+      border:    dark ? '#3B82F6' : '#2563EB',
+      sep:       dark ? '#1E293B' : '#CBD5E1',
+      accent:    dark ? '#93C5FD' : '#1D4ED8',
+      text:      dark ? '#F1F5F9' : '#0F172A',
+      textMuted: dark ? '#64748B' : '#94A3B8',
+      textCredit:dark ? '#64748B' : '#94A3B8',
+      srcBg:     dark ? 'rgba(59,130,246,0.12)' : 'rgba(37,99,235,0.10)',
+      srcBorder: dark ? 'rgba(59,130,246,0.25)' : 'rgba(37,99,235,0.35)',
+      success:   dark ? '#22C55E' : '#16A34A',
+      warning:   dark ? '#F59E0B' : '#D97706'
+    };
+
+    var DPR    = 3;
+    var W      = 300;
+    var PAD_H  = 14;
+    var PAD_W  = 16;
+    var RADIUS = 14;
+    var ROW_H  = 30;
+    var ROW_R  = 8;
+
+    // Duas rows: "from" (valor digitado) e "to" (resultado)
+    var rows = [
+      { label: state.from, value: formatCurrency(parseFloat(amountInput.value) || 0, state.from), isSource: true },
+      { label: state.to,   value: resultText, isSource: false }
+    ];
+
+    var CR_H    = 24;
+    var headerH = 14 + 10;
+    var rowsH   = rows.length * ROW_H + Math.max(0, rows.length - 1) * 4 + 10;
+    var rateH   = 12 + 10;
+    var footerH = 1 + 8 + 12 + 10;
+    var CARD_H  = PAD_H + headerH + rowsH + rateH + footerH + 1 + CR_H;
 
     var canvas = document.createElement('canvas');
-    canvas.width=W*DPR; canvas.height=H*DPR;
-    var ctx=canvas.getContext('2d');
-    ctx.scale(DPR,DPR);
+    canvas.width  = W * DPR;
+    canvas.height = CARD_H * DPR;
+    var ctx = canvas.getContext('2d', { alpha: true });
+    ctx.scale(DPR, DPR);
 
-    function rr(x,y,w,h,r){
+    function rrPath(x, y, w, h, r) {
       ctx.beginPath();
-      ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-      ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-      ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-      ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
       ctx.closePath();
     }
 
-    // Fundo
-    rr(0,0,W,H,12); ctx.fillStyle='#0F172A'; ctx.fill();
-    ctx.strokeStyle='#3B82F6'; ctx.lineWidth=1.5; ctx.stroke();
+    function textRight(t, rx, ty) {
+      ctx.fillText(t, rx - ctx.measureText(t).width, ty);
+    }
 
-    var y = PAD;
+    ctx.save();
+    rrPath(0, 0, W, CARD_H, RADIUS);
+    ctx.clip();
+
+    ctx.fillStyle = c.bgCard;
+    ctx.fillRect(0, 0, W, CARD_H);
+
+    var cy = PAD_H;
 
     // Título
-    ctx.font='bold 10px system-ui,sans-serif'; ctx.fillStyle='#93C5FD';
-    ctx.fillText('\u21C4 CURRENCY QUICK', PAD, y+10); y+=22;
+    ctx.font = 'bold 12px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.fillStyle = c.accent;
+    ctx.fillText('\u21C4 CURRENCY QUICK', PAD_W, cy + 12);
+    cy += 14 + 10;
 
-    // Resultado principal
-    ctx.font='bold 32px system-ui,sans-serif'; ctx.fillStyle='#F1F5F9';
-    ctx.fillText(resultText, PAD, y+28); y+=40;
-
-    // Taxa
-    ctx.font='12px system-ui,sans-serif'; ctx.fillStyle='#64748B';
-    ctx.fillText(rateText, PAD, y+12); y+=22;
-
-    // Sep crédito
-    ctx.fillStyle='#334155'; ctx.fillRect(0,y,W,1); y+=1;
-    ctx.fillStyle='#0B1120'; ctx.fillRect(0,y,W,H-y);
-    rr(0,H-12,W,12,12); ctx.fillStyle='#0B1120'; ctx.fill();
-    ctx.font='9px system-ui,sans-serif'; ctx.fillStyle='#475569';
-    var cr='Currency Quick  \u2022  vWeb Marketing';
-    ctx.fillText(cr,(W-ctx.measureText(cr).width)/2,y+12);
-
-    var blobP = new Promise(function(res,rej){
-      canvas.toBlob(function(b){b?res(b):rej();}, 'image/png');
+    // Rows from / to
+    rows.forEach(function (row, i) {
+      if (i > 0) cy += 4;
+      rrPath(PAD_W, cy, W - PAD_W * 2, ROW_H, ROW_R);
+      if (row.isSource) {
+        ctx.fillStyle = c.srcBg; ctx.fill();
+        ctx.strokeStyle = c.srcBorder; ctx.lineWidth = 1; ctx.stroke();
+      } else {
+        ctx.fillStyle = c.bgRow; ctx.fill();
+      }
+      ctx.font = '600 11px system-ui, -apple-system, "Segoe UI", sans-serif';
+      ctx.fillStyle = row.isSource ? c.accent : c.textMuted;
+      ctx.fillText(row.label, PAD_W + 10, cy + ROW_H / 2 + 4);
+      ctx.font = 'bold 14px system-ui, -apple-system, "Segoe UI", sans-serif';
+      ctx.fillStyle = row.isSource ? c.accent : c.text;
+      textRight(row.value, W - PAD_W - 10, cy + ROW_H / 2 + 4);
+      cy += ROW_H;
     });
 
-    navigator.clipboard.write([new ClipboardItem({'image/png': blobP})])
-      .then(function(){
+    cy += 10;
+
+    // Taxa de câmbio
+    ctx.font = '11px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.fillStyle = c.textMuted;
+    ctx.fillText(rateText, PAD_W, cy + 11);
+    cy += 14 + 6;
+
+    // Footer sep + status
+    ctx.fillStyle = c.sep;
+    ctx.fillRect(0, cy, W, 1);
+    cy += 1 + 8;
+
+    ctx.font = '500 10px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.fillStyle = (state.ratesObj && state.ratesObj.fromCache) ? c.warning : c.success;
+    ctx.fillText(
+      (state.ratesObj && state.ratesObj.fromCache) ? '\u26A1 cache' : '\u25CF ao vivo',
+      PAD_W, cy + 10
+    );
+    cy += 12 + 10;
+
+    // Faixa de créditos dentro do card
+    ctx.fillStyle = c.sep;
+    ctx.fillRect(0, cy, W, 1);
+    cy += 1;
+    ctx.fillStyle = c.bgCredit;
+    ctx.fillRect(0, cy, W, CARD_H - cy);
+    ctx.font = '9px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.fillStyle = c.textCredit;
+    var cr = 'Currency Quick  \u2022  vWeb Marketing';
+    ctx.fillText(cr, (W - ctx.measureText(cr).width) / 2, cy + CR_H / 2 + 4);
+
+    ctx.restore();
+
+    // Borda
+    rrPath(0, 0, W, CARD_H, RADIUS);
+    ctx.strokeStyle = c.border;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    var blobP = new Promise(function (res, rej) {
+      canvas.toBlob(function (b) { b ? res(b) : rej(new Error('toBlob')); }, 'image/png');
+    });
+
+    navigator.clipboard.write([new ClipboardItem({ 'image/png': blobP })])
+      .then(function () {
         copyBtn.textContent = '\u2713 Imagem copiada!';
-        setTimeout(function(){ copyBtn.textContent = 'Copiar'; }, 2000);
+        setTimeout(function () { copyBtn.textContent = 'Copiar'; }, 2000);
       })
-      .catch(function(){
-        // fallback texto
-        navigator.clipboard.writeText(resultText + ' · ' + rateText).catch(function(){});
+      .catch(function () {
+        navigator.clipboard.writeText(resultText + ' \u2022 ' + rateText).catch(function () {});
         copyBtn.textContent = 'Copiado!';
-        setTimeout(function(){ copyBtn.textContent = 'Copiar'; }, 1500);
+        setTimeout(function () { copyBtn.textContent = 'Copiar'; }, 1500);
       });
   }
 

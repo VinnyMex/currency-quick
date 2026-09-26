@@ -27,3 +27,5 @@ currency-quick.zip
 dist-extension.zip
 # Exceção: ZIP da extensão em public/ precisa ir pro repositório (build do Vercel)
 !public/currency-quick.zip
+
+.vercel

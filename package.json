@@ -12,7 +12,8 @@
     "icons": "node scripts/generate-icons.js",
     "extension:build": "npm run build && node scripts/build-extension.js",
     "setup": "npm install && npm run icons",
-    "build:vercel": "vite build && node scripts/post-build.cjs"
+    "zip": "node scripts/zip-extension.cjs",
+    "build:vercel": "npm run zip && vite build && node scripts/post-build.cjs"
   },
   "devDependencies": {
     "archiver": "^6.0.0",

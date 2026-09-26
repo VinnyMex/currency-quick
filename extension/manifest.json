@@ -38,14 +38,9 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
-  "permissions": ["storage", "contextMenus", "activeTab", "scripting", "windows", "clipboardWrite"],
-  "web_accessible_resources": [
-    {
-      "resources": ["clipboard.html"],
-      "matches": ["http://*/*", "https://*/*"]
-    }
-  ],
+  "permissions": ["storage", "contextMenus", "activeTab", "scripting", "clipboardWrite"],
   "host_permissions": [
-    "https://api.frankfurter.app/*"
+    "https://api.frankfurter.app/*",
+    "<all_urls>"
   ]
 }
